@@ -25,7 +25,7 @@ func main() {
 
 type config struct {
 	Data string `json:"data"`
-	ContentType string `json:"contentType"`
+	ContentType *string `json:"contentType,omitempty"`
 }
 
 func echoHandler(_ context.Context, request *commonHttp.Request) *commonHttp.Response {
@@ -35,12 +35,17 @@ func echoHandler(_ context.Context, request *commonHttp.Request) *commonHttp.Res
 
 	if err != nil {
 		resp.Status = 500
-		resp.Body.Write([]byte(fmt.Sprintf("Invalid config specified: %e", err)))
+		resp.Body.Write([]byte(fmt.Sprintf("Invalid config specified: %s", err.Error())))
 		return resp
 	}
 
+	if conf.ContentType != nil {
+		resp.Headers.Set("Content-Type", *conf.ContentType)
+	} else {
+		resp.Headers.Set("Content-Type", "text/plain")
+	}
+
 	resp.Status = 200
-	resp.Headers.Set("Content-Type", conf.ContentType)
 	resp.Body.Write([]byte(conf.Data))
 
 	return resp

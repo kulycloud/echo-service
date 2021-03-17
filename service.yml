@@ -1,0 +1,2 @@
+image: ghcr.io/kulycloud/service-echo:latest-dev
+replicas: 3
