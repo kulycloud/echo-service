@@ -1,0 +1,33 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Set image name
+      run: |
+        echo "IMAGE=ghcr.io/kulycloud/service-echo:$(date +%s)" >> $GITHUB_ENV
+    - uses: actions/checkout@v2
+    - name: Login to DockerHub
+      uses: docker/login-action@v1 
+      with:
+        registry: ghcr.io/kulycloud
+        username: ${{ github.repository_owner }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Build and push
+      id: docker_build
+      uses: docker/build-push-action@v2
+      with:
+        push: true
+        tags: ${{ env.IMAGE }},ghcr.io/kulycloud/service-echo:latest-dev
+    - name: Deploy
+      uses: WyriHaximus/github-action-helm3@v2
+      with:
+        exec: helm upgrade storage-redis ./ci/helm/ --install --wait --atomic --set=image=${{ env.IMAGE }} --set=redis.address=${{ secrets.REDIS_ADDRESS }} --set=redis.password=${{ secrets.REDIS_PASSWORD }}
+        kubeconfig: '${{ secrets.KUBECONFIG }}'
